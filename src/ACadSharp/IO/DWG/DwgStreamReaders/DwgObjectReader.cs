@@ -2715,12 +2715,11 @@ namespace ACadSharp.IO.DWG
 			var color = this._mergedReaders.ReadCmColor();
 			layer.Color = color.IsByBlock || color.IsByLayer ? Color.Default : color;
 
-			//TODO: This is not the Layer control handle
+			//Handle refs H Layer control (soft pointer), [Reactors (soft pointer)] and xdicobjhandle
+			//(hard owner) are read with the common data; this one is the
+			//External reference block handle (hard pointer): the xref a dependent layer comes from
 			template.LayerControlHandle = this.handleReference();
-			//Handle refs H Layer control (soft pointer)
-			//[Reactors(soft pointer)]
-			//xdicobjhandle(hard owner)
-			//External reference block handle(hard pointer)
+			layer.XrefBlockHandle = template.LayerControlHandle;
 
 			//R2000+:
 			if (this.R2000Plus)
