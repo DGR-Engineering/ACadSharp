@@ -877,7 +877,8 @@ public class ProxyGeometryReader
 				trueColor.Color = Color.ByBlock;
 				break;
 			case ProxyColorMethod.ByColor:
-				trueColor.Color = new Color(b1, b2, b3);
+				// the value is 0xmmRRGGBB stored little-endian: blue, green, red, then the method byte
+				trueColor.Color = new Color(b3, b2, b1);
 				break;
 			case ProxyColorMethod.ByACI:
 				trueColor.Color = new Color(b1);
