@@ -23,6 +23,8 @@ public class ProxyGeometryReader
 		var size = stream.ReadInt();
 		var count = stream.ReadInt();
 
+		try
+		{
 		for (int i = 0; i < count; i++)
 		{
 			var objSize = stream.ReadInt(); //Includes size and type
@@ -148,6 +150,12 @@ public class ProxyGeometryReader
 				//jump not implemented proxies
 				stream.ReadBytes((int)readDiff);
 			}
+		}
+
+		}
+		catch (System.Exception)
+		{
+			// a truncated or unexpected record ends the graphics; what was read so far is kept
 		}
 
 		return geometries;
