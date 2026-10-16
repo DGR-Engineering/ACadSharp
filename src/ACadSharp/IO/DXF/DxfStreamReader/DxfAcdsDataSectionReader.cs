@@ -1,6 +1,7 @@
 using ACadSharp.DataStorage;
 using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace ACadSharp.IO.DXF.DxfStreamReader;
 
@@ -99,11 +100,21 @@ internal class DxfAcdsDataSectionReader : DxfSectionReaderBase
 		{
 			switch (this._reader.Code)
 			{
+				case 94:
+					//Bin data length
+					break;
 				case 280:
 					column.DataType = this._reader.ValueAsShort;
 					break;
+				case 310:
+					column.Data ??= new MemoryStream();
+					column.Data.Write(this._reader.ValueAsBinaryChunk, 0, this._reader.ValueAsBinaryChunk.Length);
+					break;
+				case 320:
+					column.Handle = this._reader.ValueAsHandle;
+					break;
 				default:
-					column.CodeValuePair = new KeyValuePair<int, object>(this._reader.Code, this._reader.Value);
+					this._builder.Notify($"Unexpected code {this._reader.Code} in ACDS record column.", NotificationType.Warning);
 					break;
 			}
 
@@ -162,11 +173,14 @@ internal class DxfAcdsDataSectionReader : DxfSectionReaderBase
 				case 90:
 					record.Index = (int)this._reader.ValueAsInt;
 					break;
+				case 91:
+					record.Flags = (SchemaRecordFlags)this._reader.ValueAsInt;
+					break;
 				case 95:
 					record.Id = (int)this._reader.ValueAsShort;
 					break;
 				case 280:
-					record.Value280 = this._reader.ValueAsShort;
+					record.Type = (uint)this._reader.ValueAsInt;
 					break;
 				case 291:
 					record.Value291 = this._reader.ValueAsShort;

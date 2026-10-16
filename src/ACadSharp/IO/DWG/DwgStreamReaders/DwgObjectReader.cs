@@ -72,6 +72,8 @@ namespace ACadSharp.IO.DWG
 		/// </summary>
 		private IDwgStreamReader _handlesReader;
 
+		private long _handleSectionOffset = -1;
+
 		private IDwgStreamReader _mergedReaders;
 
 		private long _objectInitialPos = 0;
@@ -234,7 +236,7 @@ namespace ACadSharp.IO.DWG
 				ulong handleSize = this._crcReader.ReadModularChar();
 
 				//Find the handles offset
-				ulong handleSectionOffset = (ulong)this._crcReader.PositionInBits() + sizeInBits - handleSize;
+				this._handleSectionOffset = (long)((ulong)this._crcReader.PositionInBits() + sizeInBits - handleSize);
 
 				//Create a handler section reader
 				this._objectReader = DwgStreamReaderBase.GetStreamHandler(this._version, HugeMemoryStream.Clone(this._memoryStream), this._reader.Encoding);
@@ -246,11 +248,11 @@ namespace ACadSharp.IO.DWG
 
 				//Create a handler section reader
 				this._handlesReader = DwgStreamReaderBase.GetStreamHandler(this._version, HugeMemoryStream.Clone(this._memoryStream), this._reader.Encoding);
-				this._handlesReader.SetPositionInBits((long)handleSectionOffset);
+				this._handlesReader.SetPositionInBits(this._handleSectionOffset);
 
 				//Create a text section reader
 				this._textReader = DwgStreamReaderBase.GetStreamHandler(this._version, HugeMemoryStream.Clone(this._memoryStream), this._reader.Encoding);
-				this._textReader.SetPositionByFlag((long)handleSectionOffset - 1);
+				this._textReader.SetPositionByFlag(this._handleSectionOffset - 1);
 
 				this._mergedReaders = new DwgMergedReader(this._objectReader, this._textReader, this._handlesReader);
 			}
@@ -1181,8 +1183,18 @@ namespace ACadSharp.IO.DWG
 
 			//Common:
 			//Databits X databits, however many there are to the handles
+			//The retained data has no length of its own, it runs up to the handle section
+			if (this._handleSectionOffset > 0)
+			{
+				long dataBits = this._handleSectionOffset - this._objectReader.PositionInBits();
+				if (dataBits > 0)
+				{
+					int dataBytes = (int)((dataBits + 7L) / 8L);
+					byte[] data = this._objectReader.ReadBytes(dataBytes);
 
-			//TODO: Investigate how to read the data in proxies, it can contain data, strings and handles
+					proxy.Data = new MemoryStream(data, writable: false);
+				}
+			}
 		}
 
 		private CadTemplate readDbColor()
@@ -2718,8 +2730,7 @@ namespace ACadSharp.IO.DWG
 			//Handle refs H Layer control (soft pointer), [Reactors (soft pointer)] and xdicobjhandle
 			//(hard owner) are read with the common data; this one is the
 			//External reference block handle (hard pointer): the xref a dependent layer comes from
-			template.LayerControlHandle = this.handleReference();
-			layer.XrefBlockHandle = template.LayerControlHandle;
+			layer.XrefBlockHandle = this.handleReference();
 
 			//R2000+:
 			if (this.R2000Plus)
@@ -5580,6 +5591,17 @@ namespace ACadSharp.IO.DWG
 			return template;
 		}
 
+		private CadTemplate readSurface<T>(CadEntityTemplate<T> template)
+			where T : Surface, new()
+		{
+			this.readModelerGeometry(template);
+
+			//The AcDbSurface data (isoline counts) and the surface subclass data
+			//(sweep, loft and revolve parameters) that follow are not decoded yet;
+			//the object data is length delimited, so the unread tail is skipped
+			return template;
+		}
+
 		private CadTemplate readSortentsTable()
 		{
 			SortEntitiesTable sortTable = new SortEntitiesTable();
@@ -6050,6 +6072,27 @@ namespace ACadSharp.IO.DWG
 				case "SORTENTSTABLE":
 					template = this.readSortentsTable();
 					break;
+				case DxfFileToken.EntitySurface:
+					template = this.readSurface(new CadEntityTemplate<Surface>());
+					break;
+				case DxfFileToken.EntityExtrudedSurface:
+					template = this.readSurface(new CadEntityTemplate<ExtrudedSurface>());
+					break;
+				case DxfFileToken.EntityLoftedSurface:
+					template = this.readSurface(new CadEntityTemplate<LoftedSurface>());
+					break;
+				case DxfFileToken.EntityNurbSurface:
+					template = this.readSurface(new CadEntityTemplate<NurbSurface>());
+					break;
+				case DxfFileToken.EntityPlaneSurface:
+					template = this.readSurface(new CadEntityTemplate<PlaneSurface>());
+					break;
+				case DxfFileToken.EntityRevolvedSurface:
+					template = this.readSurface(new CadEntityTemplate<RevolvedSurface>());
+					break;
+				case DxfFileToken.EntitySweptSurface:
+					template = this.readSurface(new CadEntityTemplate<SweptSurface>());
+					break;
 				case "RASTERVARIABLES":
 					template = this.readRasterVariables();
 					break;
@@ -6184,11 +6227,27 @@ namespace ACadSharp.IO.DWG
 				case DxfFileToken.ObjectWipeoutVariables:
 					template = this.readWipeoutVariables();
 					break;
-			}
-
-			if (template == null && c.DxfName.EndsWith("DIMOBJECTCONTEXTDATA_CLASS"))
-			{
-				template = this.readDimensionObjectContextData();
+				case DxfFileToken.EntityRText:
+					template = this.readRText(c);
+					break;
+				case DxfFileToken.AlignedDimensionObjectContextData:
+					template = this.readDimensionObjectContextData(new AlignedDimensionObjectContextData());
+					break;
+				case DxfFileToken.AngularDimensionObjectContextData:
+					template = this.readDimensionObjectContextData(new AngularDimensionObjectContextData());
+					break;
+				case DxfFileToken.DiametricDimensionObjectContextData:
+					template = this.readDimensionObjectContextData(new DiametricDimensionObjectContextData());
+					break;
+				case DxfFileToken.OrdinateDimensionObjectContextData:
+					template = this.readDimensionObjectContextData(new OrdinateDimensionObjectContextData());
+					break;
+				case DxfFileToken.RadialDimensionObjectContextData:
+					template = this.readDimensionObjectContextData(new RadialDimensionObjectContextData());
+					break;
+				case DxfFileToken.RadialDimensionLargeObjectContextData:
+					template = this.readDimensionObjectContextData(new RadialDimensionLargeObjectContextData());
+					break;
 			}
 
 			if (template == null && c.IsAnEntity)
@@ -6877,7 +6936,7 @@ namespace ACadSharp.IO.DWG
 				//numbers all follow the normal DXF convention for group codes.
 				var code = this._objectReader.ReadShort();
 				var groupCode = GroupCodeValue.TransformValue(code);
-
+				XRecord.Entry entry;
 				switch (groupCode)
 				{
 					case GroupCodeValueType.String:
@@ -6914,7 +6973,8 @@ namespace ACadSharp.IO.DWG
 						string hex = this._objectReader.ReadTextUnicode();
 						if (ulong.TryParse(hex, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out ulong result))
 						{
-							template.AddHandleReference(code, result);
+							entry = xRecord.CreateEntry(code, result);
+							template.AddHandleReference(entry);
 						}
 						else
 						{
@@ -6930,7 +6990,9 @@ namespace ACadSharp.IO.DWG
 						break;
 					case GroupCodeValueType.ObjectId:
 					case GroupCodeValueType.ExtendedDataHandle:
-						template.AddHandleReference(code, this._objectReader.ReadRawULong());
+						var handle = this._objectReader.ReadRawULong();
+						entry = xRecord.CreateEntry(code, handle);
+						template.AddHandleReference(entry);
 						break;
 					default:
 						this.notify($"Unidentified GroupCodeValueType {code} for XRecord [{xRecord.Handle}]", NotificationType.Warning);
@@ -7299,24 +7361,29 @@ namespace ACadSharp.IO.DWG
 
 			this.readCommonEntityData(template);
 
-			if (dxfClass?.DxfName == "RTEXT")
+			return template;
+		}
+
+		private CadTemplate readRText(DxfClass dxfClass)
+		{
+			CadTemplate template = this.readUnknownEntity(dxfClass);
+			UnknownEntity entity = (UnknownEntity)template.CadObject;
+
+			try
 			{
-				try
-				{
-					var rt = new UnknownEntity.RemoteText();
-					rt.InsertPoint = this._objectReader.Read3BitDouble();
-					rt.Normal = this._objectReader.Read3BitDouble();
-					rt.Rotation = this._objectReader.ReadBitDouble();
-					rt.Height = this._objectReader.ReadBitDouble();
-					rt.Flags = this._objectReader.ReadBitShort();
-					rt.Contents = this._textReader.ReadVariableText();
-					rt.StyleHandle = this.handleReference();
-					entity.RText = rt;
-				}
-				catch (System.Exception ex)
-				{
-					this._builder.Notify($"RTEXT could not be read: {ex.Message}", NotificationType.Warning);
-				}
+				var rt = new UnknownEntity.RemoteText();
+				rt.InsertPoint = this._objectReader.Read3BitDouble();
+				rt.Normal = this._objectReader.Read3BitDouble();
+				rt.Rotation = this._objectReader.ReadBitDouble();
+				rt.Height = this._objectReader.ReadBitDouble();
+				rt.Flags = this._objectReader.ReadBitShort();
+				rt.Contents = this._textReader.ReadVariableText();
+				rt.StyleHandle = this.handleReference();
+				entity.RText = rt;
+			}
+			catch (System.Exception ex)
+			{
+				this._builder.Notify($"RTEXT could not be read: {ex.Message}", NotificationType.Warning);
 			}
 
 			return template;

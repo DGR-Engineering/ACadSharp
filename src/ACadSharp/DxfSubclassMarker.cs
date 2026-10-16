@@ -18,6 +18,10 @@ public static class DxfSubclassMarker
 
 	public const string Angular3PointDimension = "AcDb3PointAngularDimension";
 
+	public const string AlignedDimensionObjectContextData = "AcDbAlignedDimensionObjectContextData";
+
+	public const string AngularDimensionObjectContextData = "AcDbAngularDimensionObjectContextData";
+
 	public const string AnnotScaleObjectContextData = "AcDbAnnotScaleObjectContextData";
 
 	public const string ApplicationId = "AcDbRegAppTableRecord";
@@ -144,6 +148,8 @@ public static class DxfSubclassMarker
 
 	public const string EvalGraphExpr = "AcDbEvalExpr";
 
+	public const string ExtrudedSurface = "AcDbExtrudedSurface";
+
 	public const string Face3d = "AcDbFace";
 
 	public const string Field = "AcDbField";
@@ -182,6 +188,8 @@ public static class DxfSubclassMarker
 
 	public const string LinkedTableData = "AcDbLinkedTableData";
 
+	public const string LoftedSurface = "AcDbLoftedSurface";
+
 	public const string LwPolyline = "AcDbPolyline";
 
 	public const string Material = "AcDbMaterial";
@@ -198,6 +206,10 @@ public static class DxfSubclassMarker
 
 	public const string ModelerGeometry = "AcDbModelerGeometry";
 
+	public const string DiametricDimensionObjectContextData = "AcDbDiametricDimensionObjectContextData";
+
+	public const string DimensionObjectContextData = "AcDbDimensionObjectContextData";
+
 	public const string MText = "AcDbMText";
 
 	public const string MTextAttributeObjectContextData = "AcDbMTextAttributeObjectContextData";
@@ -206,9 +218,17 @@ public static class DxfSubclassMarker
 
 	public const string MultiLeaderObjectContextData = "AcDbMLeaderObjectContextData";
 
+	public const string NurbSurface = "AcDbNurbSurface";
+
 	public const string ObjectContextData = "AcDbObjectContextData";
 
 	public const string Ole2Frame = "AcDbOle2Frame";
+
+	public const string OrdinateDimensionObjectContextData = "AcDbOrdinateDimensionObjectContextData";
+
+	public const string RadialDimensionLargeObjectContextData = "AcDbRadialDimensionLargeObjectContextData";
+
+	public const string RadialDimensionObjectContextData = "AcDbRadialDimensionObjectContextData";
 
 	public const string OrdinateDimension = "AcDbOrdinateDimension";
 
@@ -219,6 +239,8 @@ public static class DxfSubclassMarker
 	public const string PdfDefinition = "AcDbPdfDefinition";
 
 	public const string PdfReference = "AcDbPdfReference";
+
+	public const string PlaneSurface = "AcDbPlaneSurface";
 
 	public const string PlotSettings = "AcDbPlotSettings";
 
@@ -258,6 +280,8 @@ public static class DxfSubclassMarker
 
 	public const string Ray = "AcDbRay";
 
+	public const string RevolvedSurface = "AcDbRevolvedSurface";
+
 	public const string Scale = "AcDbScale";
 
 	public const string Shape = "AcDbShape";
@@ -271,6 +295,10 @@ public static class DxfSubclassMarker
 	public const string SpatialFilter = "AcDbSpatialFilter";
 
 	public const string Spline = "AcDbSpline";
+
+	public const string Surface = "AcDbSurface";
+
+	public const string SweptSurface = "AcDbSweptSurface";
 
 	public const string Table = "AcDbSymbolTable";
 

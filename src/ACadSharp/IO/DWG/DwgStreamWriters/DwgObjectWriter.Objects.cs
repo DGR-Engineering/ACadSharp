@@ -7,7 +7,6 @@ using CSUtilities.IO;
 using CSUtilities.Text;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -51,6 +50,7 @@ internal partial class DwgObjectWriter : DwgSectionIO
 			case AecCleanupGroup:
 			case AecBinRecord:
 			case DimensionAssociation:
+			case DimensionObjectContextData:
 			case UnknownNonGraphicalObject:
 			case VisualStyle:
 			case ProxyObject:
